@@ -1,13 +1,14 @@
 const express = require('express');
 const http = require('http');
 const path = require('path');
-const { Ultraviolet } = require('@titaniumnetwork-dev/ultraviolet');
+// Добавляем .default, чтобы правильно вытащить конструктор
+const Ultraviolet = require('@titaniumnetwork-dev/ultraviolet').default;
 
 const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 3000;
 
-// Корректная инициализация Ultraviolet для актуальной версии библиотеки
+// Теперь эта строчка отработает без ошибок
 const uv = new Ultraviolet({
     prefix: '/search/',
     config: path.join(__dirname, 'public'),
