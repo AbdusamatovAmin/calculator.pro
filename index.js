@@ -1,14 +1,14 @@
 const express = require('express');
 const http = require('http');
 const path = require('path');
-// Добавляем .default, чтобы правильно вытащить конструктор
-const Ultraviolet = require('@titaniumnetwork-dev/ultraviolet').default;
+// Самый надежный импорт класса напрямую из исходников пакета
+const { Ultraviolet } = require('@titaniumnetwork-dev/ultraviolet/dist/uv.cjs');
 
 const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 3000;
 
-// Теперь эта строчка отработает без ошибок
+// Инициализируем наш прокси
 const uv = new Ultraviolet({
     prefix: '/search/',
     config: path.join(__dirname, 'public'),
@@ -16,10 +16,10 @@ const uv = new Ultraviolet({
     decodeUrl: (url) => decodeURIComponent(url)
 });
 
-// Раздача статических файлов калькулятора
+// Отдаем калькулятор
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Подключаем прокси к серверу через специальный обработчик
+// Обрабатываем запросы через прокси-обработчик
 app.use((req, res, next) => {
     if (req.url.startsWith(uv.prefix)) {
         return uv.request(req, res);
