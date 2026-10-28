@@ -1,0 +1,13 @@
+{
+  "name": "personal-proxy",
+  "version": "1.0.0",
+  "description": "Simple web proxy for personal use with calculator cloak",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@corrosion/corrosion": "^1.0.0",
+    "express": "^4.19.2"
+  }
+}
