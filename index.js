@@ -1,27 +1,31 @@
 const express = require('express');
-const Corrosion = require('@corrosion/corrosion');
+const http = require('http');
 const path = require('path');
+const { UltravioletServer } = require('@titaniumnetwork-dev/ultraviolet');
+
 const app = express();
+const server = http.createServer(app);
 const PORT = process.env.PORT || 3000;
 
-const proxy = new Corrosion({
+// Инициализируем прокси-движок Ultraviolet
+const uv = new UltravioletServer({
     prefix: '/search/',
-    codec: 'xor'
+    config: path.join(__dirname, 'public'),
+    encodeUrl: (url) => encodeURIComponent(url),
+    decodeUrl: (url) => decodeURIComponent(url)
 });
 
+// Раздача статических файлов калькулятора
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use((req, res, next) => {
-    if (req.url.startsWith(proxy.prefix)) {
-        return proxy.request(req, res);
-    }
-    next();
-});
+// Подключаем прокси к серверу
+uv.inject(server);
 
+// При заходе на главную страницу — отдаем калькулятор
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(PORT, () => {
-    console.log(`Сервер запущен на порту ${PORT}`);
+server.listen(PORT, () => {
+    console.log(`Прокси-сервер Ultraviolet запущен на порту ${PORT}`);
 });
