@@ -28,7 +28,7 @@
         .search-box button { padding: 14px 25px; border-radius: 30px; background: #38bdf8; color: #0f172a; font-weight: bold; }
         .search-box button:hover { background: #0ea5e9; }
 
-        /* Стили фрейма для отображения сайтов */
+        /* Полноэкранный iframe */
         #proxyFrame { display: none; width: 100vw; height: 100vh; border: none; position: absolute; top: 0; left: 0; background: #fff; z-index: 9999; }
 
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
@@ -36,7 +36,6 @@
 </head>
 <body>
 
-    <!-- Обычный калькулятор -->
     <div class="calc-container" id="calc">
         <input type="text" class="display" id="screen" readonly value="0">
         <div class="buttons">
@@ -45,6 +44,7 @@
             <button onclick="press('*')" class="operator">*</button>
             <button onclick="press('-')" class="operator">-</button>
             
+            <button onclick="press('7')">7</button>
             <button onclick="press('7')">7</button>
             <button onclick="press('8')">8</button>
             <button onclick="press('9')">9</button>
@@ -64,16 +64,14 @@
         </div>
     </div>
 
-    <!-- Скрытый поисковик -->
     <div class="proxy-container" id="proxyPanel">
         <h2>Личный Поисковик</h2>
         <form class="search-box" onsubmit="redirectToProxy(); return false;">
-            <input type="text" id="urlInput" placeholder="Введите адрес (например, google.com)" required>
+            <input type="text" id="urlInput" placeholder="Введите адрес (например, wikipedia.org)" required>
             <button type="submit">Искать</button>
         </form>
     </div>
 
-    <!-- Полноэкранный фрейм для сайтов -->
     <iframe id="proxyFrame"></iframe>
 
     <script>
@@ -118,11 +116,9 @@
                 url = 'https://' + url;
             }
             
-            // Базовый шлюз Ultraviolet
-            const proxyGateway = "https://workers.dev";
-            const finalUrl = proxyGateway + encodeURIComponent(url);
+            // Запрос идет прямо на твой личный сервер Render в созданный роут /proxy
+            const finalUrl = window.location.origin + '/proxy?url=' + encodeURIComponent(url);
 
-            // Находим наш скрытый iframe, задаем ему адрес сайта и показываем на весь экран
             const frame = document.getElementById("proxyFrame");
             frame.src = finalUrl;
             frame.style.display = "block";
