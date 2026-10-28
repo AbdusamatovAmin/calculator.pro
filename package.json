@@ -7,7 +7,7 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "@corrosion/corrosion": "^1.0.0",
+    "@titaniumnetwork-dev/ultraviolet": "^3.2.5",
     "express": "^4.19.2"
   }
 }
