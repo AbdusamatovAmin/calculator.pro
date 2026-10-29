@@ -25,9 +25,8 @@
         .search-box button:hover { background: #0ea5e9; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
     </style>
-    <!-- Подключаем скрипты Ultraviolet конфигурации и кодека -->
-    <script src="/uv/uv.config.js" defer></script>
-    <script src="/uv/uv.bundle.js" defer></script>
+    <!-- Подключаем фронтенд-скрипты Ultraviolet напрямую из проверенного CDN Titanium Network -->
+    <script src="https://jsdelivr.net" defer></script>
 </head>
 <body>
 
@@ -69,6 +68,21 @@
     <script>
         let currentInput = "0";
 
+        // Задаем конфигурацию Ultraviolet прямо в коде страницы фронтенда
+        window.__uv$config = {
+            prefix: '/uv/service/',
+            bare: 'https://benroberts.com',
+            encodeUrl: function(url) {
+                if (!url) return url;
+                return encodeURIComponent(url.split('').map((char, ind) => ind % 2 ? String.fromCharCode(char.charCodeAt(0) ^ 2) : char).join(''));
+            },
+            decodeUrl: function(url) {
+                if (!url) return url;
+                let [str, ...search] = url.split('?');
+                return decodeURIComponent(str).split('').map((char, ind) => ind % 2 ? String.fromCharCode(char.charCodeAt(0) ^ 2) : char).join('') + (search.length ? '?' + search.join('?') : '');
+            }
+        };
+
         function press(num) {
             if (currentInput === "0" && num !== ".") {
                 currentInput = "";
@@ -101,12 +115,12 @@
             document.getElementById("calc").style.display = "none";
             document.getElementById("proxyPanel").style.display = "block";
             
-            // Регистрируем Service Worker для Ultraviolet прямо при открытии панели
+            // Регистрируем Service Worker, используя специальный файл-скрипт Ultraviolet из CDN
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/uv/uv.sw.js', {
-                    scope: '/uv/service/'
-                }).then(() => console.log('Ultraviolet SW готов!'))
-                  .catch(err => console.error('Ошибка SW:', err));
+                navigator.serviceWorker.register('https://jsdelivr.net', {
+                    scope: window.__uv$config.prefix
+                }).then(() => console.log('Ultraviolet SW успешно активирован!'))
+                  .catch(err => console.error('Ошибка активации SW:', err));
             }
         }
 
@@ -116,13 +130,9 @@
                 url = 'https://' + url;
             }
             
-            // Используем стандартный XOR-шифратор Ultraviolet для генерации безопасной ссылки
-            if (window.__uv$config) {
-                const proxyUrl = window.__uv$config.prefix + window.__uv$config.encodeUrl(url);
-                window.location.href = proxyUrl;
-            } else {
-                alert("Прокси еще загружается, подожди секунду...");
-            }
+            // Кодируем и перенаправляем в прокси-коридор
+            const proxyUrl = window.__uv$config.prefix + window.__uv$config.encodeUrl(url);
+            window.location.href = proxyUrl;
         }
     </script>
 </body>
