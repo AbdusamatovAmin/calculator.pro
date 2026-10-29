@@ -1,13 +1,16 @@
 {
-  "name": "personal-proxy",
+  "name": "calculator.pro",
   "version": "1.0.0",
-  "description": "Final stable personal proxy embedded inside a calculator cloaker",
+  "description": "One of the best calculators in the world",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
-    "@titaniumnetwork-dev/ultraviolet": "^3.2.5",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "http-proxy-middleware": "^3.0.0"
   }
 }
