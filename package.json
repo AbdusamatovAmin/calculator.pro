@@ -1,13 +1,13 @@
 {
-  "name": "personal-proxy",
+  "name": "personal-proxy-uv",
   "version": "1.0.0",
-  "description": "Simple web proxy for personal use with calculator cloak",
+  "description": "Modern Ultraviolet proxy with calculator cloak",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "@corrosion/corrosion": "^1.0.0",
+    "@titaniumnetwork-dev/ultraviolet": "^3.0.4",
     "express": "^4.19.2"
   }
 }
