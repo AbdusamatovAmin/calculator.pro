@@ -25,11 +25,10 @@
         .search-box button:hover { background: #0ea5e9; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
     </style>
-    <!-- Подключаем фронтенд-скрипты Ultraviolet напрямую из проверенного CDN Titanium Network -->
-    <script src="https://jsdelivr.net" defer></script>
 </head>
 <body>
 
+    <!-- Калькулятор (виден всем по умолчанию) -->
     <div class="calc-container" id="calc">
         <input type="text" class="display" id="screen" readonly value="0">
         <div class="buttons">
@@ -57,31 +56,17 @@
         </div>
     </div>
 
+    <!-- Скрытый поисковик (открывается по коду) -->
     <div class="proxy-container" id="proxyPanel">
-        <h2>Личный Поисковик (Ultraviolet)</h2>
+        <h2>Личный Поисковик</h2>
         <form class="search-box" onsubmit="redirectToProxy(); return false;">
-            <input type="text" id="urlInput" placeholder="Введите адрес (например, google.com)" required>
+            <input type="text" id="urlInput" placeholder="Введите адрес сайта или поисковый запрос" required>
             <button type="submit">Искать</button>
         </form>
     </div>
 
     <script>
         let currentInput = "0";
-
-        // Задаем конфигурацию Ultraviolet прямо в коде страницы фронтенда
-        window.__uv$config = {
-            prefix: '/uv/service/',
-            bare: 'https://benroberts.com',
-            encodeUrl: function(url) {
-                if (!url) return url;
-                return encodeURIComponent(url.split('').map((char, ind) => ind % 2 ? String.fromCharCode(char.charCodeAt(0) ^ 2) : char).join(''));
-            },
-            decodeUrl: function(url) {
-                if (!url) return url;
-                let [str, ...search] = url.split('?');
-                return decodeURIComponent(str).split('').map((char, ind) => ind % 2 ? String.fromCharCode(char.charCodeAt(0) ^ 2) : char).join('') + (search.length ? '?' + search.join('?') : '');
-            }
-        };
 
         function press(num) {
             if (currentInput === "0" && num !== ".") {
@@ -90,6 +75,7 @@
             currentInput += num;
             document.getElementById("screen").value = currentInput;
 
+            // Проверка секретной комбинации
             if (currentInput === "2208") {
                 activateSecretMode();
             }
@@ -114,25 +100,26 @@
         function activateSecretMode() {
             document.getElementById("calc").style.display = "none";
             document.getElementById("proxyPanel").style.display = "block";
-            
-            // Регистрируем Service Worker, используя специальный файл-скрипт Ultraviolet из CDN
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('https://jsdelivr.net', {
-                    scope: window.__uv$config.prefix
-                }).then(() => console.log('Ultraviolet SW успешно активирован!'))
-                  .catch(err => console.error('Ошибка активации SW:', err));
-            }
+        }
+
+        // XOR Кодирование для отправки запроса
+        function encodeUrl(url) {
+            if (!url) return url;
+            return encodeURIComponent(url.split('').map((char, ind) => ind % 2 ? String.fromCharCode(char.charCodeAt(0) ^ 2) : char).join(''));
         }
 
         function redirectToProxy() {
             let url = document.getElementById("urlInput").value.trim();
-            if (!/^https?:\/\//i.test(url)) {
+            
+            // Если ввели текст с пробелами или без точки — ищем в защищенном от капчи DuckDuckGo
+            if (!url.includes('.') || url.includes(' ')) {
+                url = 'https://duckduckgo.com' + encodeURIComponent(url);
+            } else if (!/^https?:\/\//i.test(url)) {
                 url = 'https://' + url;
             }
             
-            // Кодируем и перенаправляем в прокси-коридор
-            const proxyUrl = window.__uv$config.prefix + window.__uv$config.encodeUrl(url);
-            window.location.href = proxyUrl;
+            // Отправляем в наш прокси-коридор
+            window.location.href = '/uv/service/' + encodeUrl(url);
         }
     </script>
 </body>
