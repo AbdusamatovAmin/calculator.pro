@@ -1,13 +1,13 @@
 {
   "name": "personal-proxy",
   "version": "1.0.0",
-  "description": "Real proxy engine embedded in calculator",
+  "description": "Final stable personal proxy embedded inside a calculator cloaker",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "express": "^4.19.2",
-    "unblocker": "^2.3.1"
+    "@titaniumnetwork-dev/ultraviolet": "^3.2.5",
+    "express": "^4.19.2"
   }
 }
