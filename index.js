@@ -4,16 +4,11 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Раздача статических файлов калькулятора из папки public
+// Раздача статических файлов из папки public (туда обращается браузер)
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Главная страница
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// Перехват непредвиденных роутов для удержания структуры фрейма
-app.get('/uv/service/*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
