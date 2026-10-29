@@ -7,7 +7,6 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "@tomphttp/bare-server-node": "^2.0.1",
     "express": "^4.19.2"
   }
 }
