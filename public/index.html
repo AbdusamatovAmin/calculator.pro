@@ -25,6 +25,9 @@
         .search-box button:hover { background: #0ea5e9; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
     </style>
+    <!-- Подключаем скрипты Ultraviolet конфигурации и кодека -->
+    <script src="/uv/uv.config.js" defer></script>
+    <script src="/uv/uv.bundle.js" defer></script>
 </head>
 <body>
 
@@ -56,9 +59,9 @@
     </div>
 
     <div class="proxy-container" id="proxyPanel">
-        <h2>Личный Поисковик</h2>
+        <h2>Личный Поисковик (Ultraviolet)</h2>
         <form class="search-box" onsubmit="redirectToProxy(); return false;">
-            <input type="text" id="urlInput" placeholder="Введите адрес (например, youtube.com)" required>
+            <input type="text" id="urlInput" placeholder="Введите адрес (например, google.com)" required>
             <button type="submit">Искать</button>
         </form>
     </div>
@@ -97,6 +100,14 @@
         function activateSecretMode() {
             document.getElementById("calc").style.display = "none";
             document.getElementById("proxyPanel").style.display = "block";
+            
+            // Регистрируем Service Worker для Ultraviolet прямо при открытии панели
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/uv/uv.sw.js', {
+                    scope: '/uv/service/'
+                }).then(() => console.log('Ultraviolet SW готов!'))
+                  .catch(err => console.error('Ошибка SW:', err));
+            }
         }
 
         function redirectToProxy() {
@@ -104,7 +115,14 @@
             if (!/^https?:\/\//i.test(url)) {
                 url = 'https://' + url;
             }
-            window.location.href = '/search/' + btoa(url);
+            
+            // Используем стандартный XOR-шифратор Ultraviolet для генерации безопасной ссылки
+            if (window.__uv$config) {
+                const proxyUrl = window.__uv$config.prefix + window.__uv$config.encodeUrl(url);
+                window.location.href = proxyUrl;
+            } else {
+                alert("Прокси еще загружается, подожди секунду...");
+            }
         }
     </script>
 </body>
