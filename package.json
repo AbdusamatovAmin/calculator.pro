@@ -4,8 +4,7 @@
   "description": "Full access web proxy hidden behind a calculator",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "build": "mkdir -p public && curl -sSL https://jsdelivr.net -o public/uv.bundle.js && curl -sSL https://jsdelivr.net -o public/uv.sw.js"
+    "start": "node index.js"
   },
   "dependencies": {
     "express": "^4.19.2"
