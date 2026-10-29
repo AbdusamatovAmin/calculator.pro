@@ -1,13 +1,13 @@
 {
   "name": "personal-proxy",
   "version": "1.0.0",
-  "description": "Simple web proxy for personal use with calculator cloak",
+  "description": "Powerful personal proxy embedded inside a calculator",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
     "express": "^4.19.2",
-    "http-proxy-middleware": "^3.0.3"
+    "express-http-proxy": "^2.1.1"
   }
 }
