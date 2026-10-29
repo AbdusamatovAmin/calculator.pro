@@ -16,14 +16,15 @@
         button.operator:hover { background: #0369a1; }
         button.clear { background: #ef4444; }
         button.clear:hover { background: #dc2626; }
-        .proxy-container { display: none; background: #1e293b; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 450px; text-align: center; animation: fadeIn 0.5s ease; }
-        .proxy-container h2 { margin-bottom: 20px; color: #38bdf8; font-weight: 500; font-size: 1.7rem; }
-        .search-box { display: flex; gap: 10px; }
-        .search-box input { flex: 1; padding: 14px 20px; border-radius: 30px; border: 2px solid #334155; background: #0f172a; color: #fff; font-size: 1rem; outline: none; transition: border-color 0.3s; }
-        .search-box input:focus { border-color: #38bdf8; }
-        .search-box button { padding: 14px 25px; border-radius: 30px; background: #38bdf8; color: #0f172a; font-weight: bold; }
-        .search-box button:hover { background: #0ea5e9; }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        
+        /* Стили контейнера прокси и встроенного фрейма */
+        .proxy-container { display: none; width: 100%; height: 100vh; background: #0f172a; animation: fadeIn 0.5s ease; position: absolute; top:0; left:0; z-index: 9999; }
+        .proxy-bar { background: #1e293b; padding: 10px 20px; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid #334155; }
+        .proxy-bar input { flex: 1; padding: 10px 20px; border-radius: 20px; border: 1px solid #334155; background: #0f172a; color: #fff; outline: none; }
+        .proxy-bar button { padding: 10px 20px; border-radius: 20px; background: #38bdf8; color: #0f172a; font-weight: bold; border:none; cursor: pointer; }
+        .proxy-bar button:hover { background: #0ea5e9; }
+        iframe { width: 100%; height: calc(100vh - 60px); border: none; background: #fff; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
     
     <!-- Подгружаем официальное ядро Ultraviolet из CDN -->
@@ -31,6 +32,7 @@
 </head>
 <body>
 
+    <!-- Калькулятор (виден всем по умолчанию) -->
     <div class="calc-container" id="calc">
         <input type="text" class="display" id="screen" readonly value="0">
         <div class="buttons">
@@ -58,21 +60,23 @@
         </div>
     </div>
 
+    <!-- Мощная панель браузера Ultraviolet (Откроется вместо калькулятора) -->
     <div class="proxy-container" id="proxyPanel">
-        <h2>Личный Поисковик (Ultraviolet)</h2>
-        <form class="search-box" onsubmit="redirectToProxy(); return false;">
-            <input type="text" id="urlInput" placeholder="Введи адрес (youtube.com) или поисковый запрос" required>
-            <button type="submit">Искать</button>
-        </form>
+        <div class="proxy-bar">
+            <input type="text" id="urlInput" placeholder="Введи адрес (например, youtube.com) или поисковый запрос">
+            <button onclick="redirectToProxy()">Перейти</button>
+        </div>
+        <!-- Сюда внутри этой же вкладки будет транслироваться интернет -->
+        <iframe id="proxyFrame"></iframe>
     </div>
 
     <script>
         let currentInput = "0";
 
-        // Официальная конфигурация Ultraviolet, адаптированная под наш бэкенд
+        // Официальная конфигурация Ultraviolet с подключением к глобальному Bare-серверу
         window.__uv$config = {
             prefix: '/uv/service/',
-            bare: '/bare/',
+            bare: 'https://benroberts.com', 
             encodeUrl: function(url) { return encodeURIComponent(url.split('').map((char, ind) => ind % 2 ? String.fromCharCode(char.charCodeAt(0) ^ 2) : char).join('')); },
             decodeUrl: function(url) { return decodeURIComponent(url).split('').map((char, ind) => ind % 2 ? String.fromCharCode(char.charCodeAt(0) ^ 2) : char).join(''); }
         };
@@ -103,11 +107,11 @@
             document.getElementById("calc").style.display = "none";
             document.getElementById("proxyPanel").style.display = "block";
             
-            // Регистрируем встроенный Service Worker из CDN, привязывая его к нашему серверу
+            // Активируем Service Worker Ultraviolet из распределенной сети CDN
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('https://jsdelivr.net', {
                     scope: window.__uv$config.prefix
-                }).then(() => console.log('Ultraviolet SW готов к обходу блокировок!'))
+                }).then(() => console.log('Ultraviolet SW полностью активирован!'))
                   .catch(err => console.error('Ошибка SW:', err));
             }
         }
@@ -117,12 +121,14 @@
             let url;
 
             if (!input.includes('.') || input.includes(' ')) {
-                url = 'https://google.com' + encodeURIComponent(input);
+                url = 'https://duckduckgo.com' + encodeURIComponent(input);
             } else {
                 url = /^https?:\/\//i.test(input) ? input : 'https://' + input;
             }
             
-            window.location.href = window.__uv$config.prefix + window.__uv$config.encodeUrl(url);
+            // Направляем сгенерированный прокси-адрес прямо внутрь встроенного iframe!
+            const targetProxyUrl = window.__uv$config.prefix + window.__uv$config.encodeUrl(url);
+            document.getElementById("proxyFrame").src = targetProxyUrl;
         }
     </script>
 </body>
