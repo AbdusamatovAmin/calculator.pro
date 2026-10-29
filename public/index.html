@@ -26,7 +26,7 @@
         .search-box button { padding: 14px 25px; border-radius: 30px; background: #38bdf8; color: #0f172a; font-weight: bold; border: none; cursor: pointer; }
         .search-box button:hover { background: #0ea5e9; }
 
-        /* Фрейм разворачивается внутри текущего окна калькулятора */
+        /* Окно отображения страниц */
         #proxyFrame { display: none; width: 100vw; height: 100vh; border: none; position: absolute; top: 0; left: 0; background: #fff; z-index: 99999; }
 
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
@@ -66,12 +66,11 @@
     <div class="proxy-container" id="proxyPanel">
         <h2>Личный Поисковик</h2>
         <form class="search-box" onsubmit="redirectToProxy(); return false;">
-            <input type="text" id="urlInput" placeholder="Введите домен (например, wikipedia.org)" required>
+            <input type="text" id="urlInput" placeholder="Введите адрес (например, wikipedia.org)" required>
             <button type="submit">Искать</button>
         </form>
     </div>
 
-    <!-- Окно отображения страниц -->
     <iframe id="proxyFrame"></iframe>
 
     <script>
@@ -112,8 +111,16 @@
         function redirectToProxy() {
             let url = document.getElementById("urlInput").value.trim();
             
-            // Направляем запрос на собственный сервер Render
-            const finalUrl = window.location.origin + '/service?url=' + encodeURIComponent(url);
+            // Если точки нет — это поисковой запрос в Google, прогоняем через прокси
+            if (!url.includes('.')) {
+                url = "://google.com" + encodeURIComponent(url);
+            }
+            
+            // Убираем http протоколы, unblocker сам подставит нужный
+            url = url.replace(/^https?:\/\//i, '');
+            
+            // Формируем запрос к нашему личному Unblocker движку
+            const finalUrl = window.location.origin + '/proxy/' + url;
 
             const frame = document.getElementById("proxyFrame");
             frame.src = finalUrl;
