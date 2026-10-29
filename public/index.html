@@ -22,18 +22,21 @@
         /* Стили секретного поиска */
         .proxy-container { display: none; background: #1e293b; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 450px; text-align: center; animation: fadeIn 0.5s ease; }
         .proxy-container h2 { margin-bottom: 20px; color: #38bdf8; font-weight: 500; font-size: 1.7rem; }
-        .search-box { display: flex; gap: 10px; }
-        .search-box input { flex: 1; padding: 14px 20px; border-radius: 30px; border: 2px solid #334155; background: #0f172a; color: #fff; font-size: 1rem; outline: none; transition: border-color 0.3s; }
+        .search-box { display: flex; flex-direction: column; gap: 15px; }
+        .search-box input { width: 100%; padding: 14px 20px; border-radius: 30px; border: 2px solid #334155; background: #0f172a; color: #fff; font-size: 1rem; outline: none; transition: border-color 0.3s; text-align: center; }
         .search-box input:focus { border-color: #38bdf8; }
-        .search-box button { padding: 14px 25px; border-radius: 30px; background: #38bdf8; color: #0f172a; font-weight: bold; }
-        .search-box button:hover { background: #0ea5e9; }
+        
+        /* Секретная кнопка-ссылка перехода */
+        .go-link { display: none; padding: 14px 25px; border-radius: 30px; background: #22c55e; color: #fff; font-weight: bold; text-decoration: none; font-size: 1.1rem; transition: background 0.2s, transform 0.1s; animation: fadeIn 0.3s ease; }
+        .go-link:hover { background: #16a34a; }
+        .go-link:active { transform: scale(0.98); }
 
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
     </style>
 </head>
 <body>
 
-    <!-- Наш калькулятор маскировки -->
+    <!-- Калькулятор -->
     <div class="calc-container" id="calc">
         <input type="text" class="display" id="screen" readonly value="0">
         <div class="buttons">
@@ -64,10 +67,11 @@
     <!-- Скрытый поисковик -->
     <div class="proxy-container" id="proxyPanel">
         <h2>Личный Поисковик</h2>
-        <form class="search-box" onsubmit="redirectToProxy(); return false;">
-            <input type="text" id="urlInput" placeholder="Введите адрес (например, youtube.com)" required>
-            <button type="submit">Искать</button>
-        </form>
+        <div class="search-box">
+            <input type="text" id="urlInput" placeholder="Введите адрес (например, wikipedia.org)" oninput="generateSecureLink()" required>
+            <!-- Настоящая физическая ссылка, которую браузер никогда не заблокирует -->
+            <a href="#" target="_blank" id="secretGoBtn" class="go-link" onclick="resetToCalculatorLater()">Открыть сайт</a>
+        </div>
     </div>
 
     <script>
@@ -85,7 +89,6 @@
             }
         }
 
-        // Возврат в режим калькулятора после поиска
         function clearScreen() {
             currentInput = "0";
             document.getElementById("screen").value = currentInput;
@@ -105,25 +108,37 @@
         function activateSecretMode() {
             document.getElementById("calc").style.display = "none";
             document.getElementById("proxyPanel").style.display = "block";
+            document.getElementById("urlInput").value = "";
+            document.getElementById("secretGoBtn").style.display = "none";
         }
 
-        function redirectToProxy() {
+        // Генерируем ссылку "на лету" при вводе текста
+        function generateSecureLink() {
             let url = document.getElementById("urlInput").value.trim();
-            if (!/^https?:\/\//i.test(url)) {
-                url = 'https://' + url;
+            const btn = document.getElementById("secretGoBtn");
+            
+            if (url.length > 3 && url.includes('.')) {
+                if (!/^https?:\/\//i.test(url)) {
+                    url = 'https://' + url;
+                }
+                
+                // Стабильный шлюз анонимизации страниц
+                const proxyGateway = "https://textise.net";
+                
+                btn.href = proxyGateway + encodeURIComponent(url);
+                btn.style.display = "block"; // Показываем зеленую кнопку
+            } else {
+                btn.style.display = "none"; // Прячем, если адрес неполный
             }
-            
-            // Используем сверхстабильный и быстрый поисковой прокси-шлюз
-            const proxyGateway = "https://textise.net";
-            const finalUrl = proxyGateway + encodeURIComponent(url);
+        }
 
-            // Главный трюк: открываем чистый сайт в новой вкладке, полностью обходя ограничения Google Sites!
-            window.open(finalUrl, '_blank');
-            
-            // Сбрасываем калькулятор обратно в режим маскировки для безопасности
-            document.getElementById("proxyPanel").style.display = "none";
-            document.getElementById("calc").style.display = "block";
-            clearScreen();
+        // Мягко возвращаем калькулятор обратно через секунду после клика, чтобы никто не спалил
+        function resetToCalculatorLater() {
+            setTimeout(() => {
+                document.getElementById("proxyPanel").style.display = "none";
+                document.getElementById("calc").style.display = "block";
+                clearScreen();
+            }, 1000);
         }
     </script>
 </body>
