@@ -1,52 +1,70 @@
 const express = require('express');
-const { createServer } = require('node:http');
-const uvSystem = require('@titaniumnetwork-dev/ultraviolet');
+const fetch = require('node-fetch');
 const path = require('path');
 
 const app = express();
-const server = createServer(app);
 const PORT = process.env.PORT || 3000;
 
-// Конфигурация путей Ultraviolet
-const uvConfig = {
-    prefix: '/uv/service/',
-    bare: 'https://benroberts.com', 
-    config: {
-        codec: 'xor'
-    }
-};
-
-// Защищенный способ инициализации middleware вне зависимости от версии конструктора пакета
-if (typeof uvSystem === 'function') {
-    app.use('/uv/', uvSystem(uvConfig));
-} else if (uvSystem.ultraviolet && typeof uvSystem.ultraviolet === 'function') {
-    app.use('/uv/', uvSystem.ultraviolet(uvConfig));
-} else {
-    // Резервный вариант через встроенный обработчик объекта
-    const UltravioletClass = uvSystem.Ultraviolet || uvSystem;
-    try {
-        const uv = new UltravioletClass(uvConfig);
-        app.use('/uv/', (req, res, next) => {
-            if (uv.requiresRoute(req)) {
-                uv.route(req, res);
-            } else {
-                next();
-            }
-        });
-    } catch (e) {
-        // Если класс не создается, используем метод фабрики по умолчанию
-        app.use('/uv/', uvSystem.server ? uvSystem.server(uvConfig) : (req, res, next) => next());
-    }
+// Функция декодирования XOR-ссылок от фронтенда
+function decodeUrl(url) {
+    if (!url) return url;
+    return decodeURIComponent(url).split('').map((char, ind) => ind % 2 ? String.fromCharCode(char.charCodeAt(0) ^ 2) : char).join('');
 }
 
-// Раздача статических файлов из папки public
+// Функция кодирования ссылок для обратной подстановки в HTML
+function encodeUrl(url) {
+    if (!url) return url;
+    return encodeURIComponent(url.split('').map((char, ind) => ind % 2 ? String.fromCharCode(char.charCodeAt(0) ^ 2) : char).join(''));
+}
+
+// Наш собственный мощный прокси-коридор
+app.use('/uv/service/:encodedUrl*', async (req, res) => {
+    try {
+        // Собираем полный зашифрованный путь
+        const fullPath = req.params.encodedUrl + (req.params[0] || '');
+        let targetUrl = decodeUrl(fullPath);
+
+        if (!/^https?:\/\//i.test(targetUrl)) {
+            targetUrl = 'https://' + targetUrl;
+        }
+
+        // Выполняем запрос к целевому сайту от имени сервера
+        const response = await fetch(targetUrl, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
+        });
+
+        // Получаем тип контента (HTML, CSS, картинка и т.д.)
+        const contentType = response.headers.get('content-type');
+        if (contentType) res.setHeader('content-type', contentType);
+
+        // Если это не текст/HTML — просто отдаем файл (картинку, скрипт) как есть
+        if (!contentType || !contentType.includes('text/html')) {
+            return response.body.pipe(res);
+        }
+
+        // Если это HTML страница — переписываем ссылки внутри нее, чтобы они вели через наш прокси
+        let html = await response.text();
+        const origin = `${req.protocol}://${req.get('host')}/uv/service/`;
+
+        // Умная замена ссылок (href и src)
+        html = html.replace(/(href|src)=["'](https?:\/\/[^"']+)["']/g, (match, p1, p2) => {
+            return `${p1}="${origin}${encodeUrl(p2)}"`;
+        });
+
+        res.send(html);
+
+    } catch (error) {
+        res.status(500).send(`Ошибочка проксирования: ${error.message}`);
+    }
+});
+
+// Раздача калькулятора
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Главная страница (Калькулятор)
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-server.listen(PORT, () => {
-    console.log(`Ultraviolet прокси успешно запущен на порту ${PORT}`);
+app.listen(PORT, () => {
+    console.log(`Прокси-сервер успешно запущен на порту ${PORT}`);
 });
