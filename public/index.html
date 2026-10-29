@@ -8,8 +8,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body, html { background-color: #0f172a; height: 100vh; width: 100vw; color: #fff; overflow: hidden; display: flex; justify-content: center; align-items: center; }
         
-        /* Стили калькулятора */
-        .calc-container { background: #1e293b; padding: 24px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); width: 320px; transition: all 0.5s ease; z-index: 10; }
+        .calc-container { background: #1e293b; padding: 24px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); width: 320px; transition: all 0.5s ease; }
         .display { width: 100%; height: 70px; background: #0f172a; border: none; border-radius: 10px; margin-bottom: 20px; padding: 15px; text-align: right; font-size: 2rem; color: #38bdf8; outline: none; }
         .buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
         button { padding: 18px; font-size: 1.25rem; border: none; border-radius: 12px; cursor: pointer; background: #334155; color: #fff; transition: background 0.2s; user-select: none; }
@@ -19,8 +18,7 @@
         button.clear { background: #ef4444; }
         button.clear:hover { background: #dc2626; }
 
-        /* Стили секретного поиска */
-        .proxy-container { display: none; background: #1e293b; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 450px; text-align: center; animation: fadeIn 0.5s ease; z-index: 10; }
+        .proxy-container { display: none; background: #1e293b; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 450px; text-align: center; animation: fadeIn 0.5s ease; }
         .proxy-container h2 { margin-bottom: 20px; color: #38bdf8; font-weight: 500; font-size: 1.7rem; }
         .search-box { display: flex; gap: 10px; }
         .search-box input { flex: 1; padding: 14px 20px; border-radius: 30px; border: 2px solid #334155; background: #0f172a; color: #fff; font-size: 1rem; outline: none; transition: border-color 0.3s; }
@@ -28,7 +26,7 @@
         .search-box button { padding: 14px 25px; border-radius: 30px; background: #38bdf8; color: #0f172a; font-weight: bold; border: none; cursor: pointer; }
         .search-box button:hover { background: #0ea5e9; }
 
-        /* Полноэкранный iframe, который перекроет всё */
+        /* Фрейм разворачивается внутри текущего окна калькулятора */
         #proxyFrame { display: none; width: 100vw; height: 100vh; border: none; position: absolute; top: 0; left: 0; background: #fff; z-index: 99999; }
 
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
@@ -36,7 +34,7 @@
 </head>
 <body>
 
-    <!-- Обычный калькулятор -->
+    <!-- Калькулятор -->
     <div class="calc-container" id="calc">
         <input type="text" class="display" id="screen" readonly value="0">
         <div class="buttons">
@@ -64,25 +62,23 @@
         </div>
     </div>
 
-    <!-- Скрытый поисковик -->
+    <!-- Поисковик -->
     <div class="proxy-container" id="proxyPanel">
         <h2>Личный Поисковик</h2>
         <form class="search-box" onsubmit="redirectToProxy(); return false;">
-            <input type="text" id="urlInput" placeholder="Введите адрес (например, wikipedia.org)" required>
+            <input type="text" id="urlInput" placeholder="Введите домен (например, wikipedia.org)" required>
             <button type="submit">Искать</button>
         </form>
     </div>
 
-    <!-- Полноэкранный фрейм, который откроется внутри калькулятора -->
-    <iframe id="proxyFrame" sandbox="allow-scripts allow-same-origin allow-forms align-top"></iframe>
+    <!-- Окно отображения страниц -->
+    <iframe id="proxyFrame"></iframe>
 
     <script>
         let currentInput = "0";
 
         function press(num) {
-            if (currentInput === "0" && num !== ".") {
-                currentInput = "";
-            }
+            if (currentInput === "0" && num !== ".") { currentInput = ""; }
             currentInput += num;
             document.getElementById("screen").value = currentInput;
 
@@ -110,25 +106,18 @@
         function activateSecretMode() {
             document.getElementById("calc").style.display = "none";
             document.getElementById("proxyPanel").style.display = "block";
+            document.getElementById("urlInput").value = "";
         }
 
         function redirectToProxy() {
             let url = document.getElementById("urlInput").value.trim();
             
-            // Если ввели просто фразу, превращаем её в поисковый запрос
-            if (!url.includes('.')) {
-                url = "https://google.com" + encodeURIComponent(url);
-            } else if (!/^https?:\/\//i.test(url)) {
-                url = 'https://' + url;
-            }
-            
-            // Самый стабильный шлюз, который разрешает встраивание во фреймы без блокировок
-            const proxyGateway = "https://googleusercontent.com";
-            const finalUrl = proxyGateway + encodeURIComponent(url);
+            // Направляем запрос на собственный сервер Render
+            const finalUrl = window.location.origin + '/service?url=' + encodeURIComponent(url);
 
             const frame = document.getElementById("proxyFrame");
             frame.src = finalUrl;
-            frame.style.display = "block"; // Показываем фрейм на весь экран внутри калькулятора
+            frame.style.display = "block";
             document.getElementById("proxyPanel").style.display = "none";
         }
     </script>
