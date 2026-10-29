@@ -1,16 +1,13 @@
 {
-  "name": "calculator.pro",
+  "name": "personal-proxy",
   "version": "1.0.0",
-  "description": "One of the best calculators in the world",
+  "description": "Simple web proxy for personal use with calculator cloak",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
-  "engines": {
-    "node": ">=18.0.0"
-  },
   "dependencies": {
-    "express": "^4.19.2",
-    "http-proxy-middleware": "^3.0.0"
+    "@corrosion/corrosion": "^1.0.0",
+    "express": "^4.19.2"
   }
 }
