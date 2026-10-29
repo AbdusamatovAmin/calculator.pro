@@ -17,7 +17,6 @@
         button.clear { background: #ef4444; }
         button.clear:hover { background: #dc2626; }
         
-        /* Стили контейнера прокси и встроенного фрейма */
         .proxy-container { display: none; width: 100%; height: 100vh; background: #0f172a; animation: fadeIn 0.5s ease; position: absolute; top:0; left:0; z-index: 9999; }
         .proxy-bar { background: #1e293b; padding: 10px 20px; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid #334155; }
         .proxy-bar input { flex: 1; padding: 10px 20px; border-radius: 20px; border: 1px solid #334155; background: #0f172a; color: #fff; outline: none; }
@@ -26,13 +25,12 @@
         iframe { width: 100%; height: calc(100vh - 60px); border: none; background: #fff; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
-    
-    <!-- Подгружаем официальное ядро Ultraviolet из CDN -->
-    <script src="https://jsdelivr.net" defer></script>
+    <!-- Подключаем локальные скрипты Ultraviolet -->
+    <script src="/uv.config.js" defer></script>
+    <script src="/uv.bundle.js" defer></script>
 </head>
 <body>
 
-    <!-- Калькулятор (виден всем по умолчанию) -->
     <div class="calc-container" id="calc">
         <input type="text" class="display" id="screen" readonly value="0">
         <div class="buttons">
@@ -60,26 +58,16 @@
         </div>
     </div>
 
-    <!-- Мощная панель браузера Ultraviolet (Откроется вместо калькулятора) -->
     <div class="proxy-container" id="proxyPanel">
         <div class="proxy-bar">
             <input type="text" id="urlInput" placeholder="Введи адрес (например, youtube.com) или поисковый запрос">
             <button onclick="redirectToProxy()">Перейти</button>
         </div>
-        <!-- Сюда внутри этой же вкладки будет транслироваться интернет -->
         <iframe id="proxyFrame"></iframe>
     </div>
 
     <script>
         let currentInput = "0";
-
-        // Официальная конфигурация Ultraviolet с подключением к глобальному Bare-серверу
-        window.__uv$config = {
-            prefix: '/uv/service/',
-            bare: 'https://benroberts.com', 
-            encodeUrl: function(url) { return encodeURIComponent(url.split('').map((char, ind) => ind % 2 ? String.fromCharCode(char.charCodeAt(0) ^ 2) : char).join('')); },
-            decodeUrl: function(url) { return decodeURIComponent(url).split('').map((char, ind) => ind % 2 ? String.fromCharCode(char.charCodeAt(0) ^ 2) : char).join(''); }
-        };
 
         function press(num) {
             if (currentInput === "0" && num !== ".") currentInput = "";
@@ -107,11 +95,11 @@
             document.getElementById("calc").style.display = "none";
             document.getElementById("proxyPanel").style.display = "block";
             
-            // Активируем Service Worker Ultraviolet из распределенной сети CDN
+            // Теперь регистрируем ЛОКАЛЬНЫЙ Service Worker, браузер это разрешит!
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('https://jsdelivr.net', {
-                    scope: window.__uv$config.prefix
-                }).then(() => console.log('Ultraviolet SW полностью активирован!'))
+                navigator.serviceWorker.register('/uv.sw.js', {
+                    scope: '/uv/service/'
+                }).then(() => console.log('Ultraviolet SW запущен локально!'))
                   .catch(err => console.error('Ошибка SW:', err));
             }
         }
@@ -126,9 +114,12 @@
                 url = /^https?:\/\//i.test(input) ? input : 'https://' + input;
             }
             
-            // Направляем сгенерированный прокси-адрес прямо внутрь встроенного iframe!
-            const targetProxyUrl = window.__uv$config.prefix + window.__uv$config.encodeUrl(url);
-            document.getElementById("proxyFrame").src = targetProxyUrl;
+            if (window.__uv$config) {
+                const targetProxyUrl = window.__uv$config.prefix + window.__uv$config.encodeUrl(url);
+                document.getElementById("proxyFrame").src = targetProxyUrl;
+            } else {
+                alert("Прокси ещё загружается скриптами, подожди секунду...");
+            }
         }
     </script>
 </body>
