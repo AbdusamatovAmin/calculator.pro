@@ -1,13 +1,13 @@
 {
   "name": "personal-proxy-uv",
   "version": "1.0.0",
-  "description": "Modern Ultraviolet proxy with calculator cloak",
+  "description": "Modern proxy with calculator cloak",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "@titaniumnetwork-dev/ultraviolet": "^3.0.4",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "node-fetch": "^2.7.0"
   }
 }
