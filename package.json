@@ -1,14 +1,13 @@
 {
-  "name": "personal-proxy-uv",
+  "name": "ultraviolet-calc-proxy",
   "version": "1.0.0",
-  "description": "Modern proxy with calculator cloak",
+  "description": "Full access web proxy hidden behind a calculator",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "cookie-parser": "^1.4.7",
-    "express": "^4.19.2",
-    "node-fetch": "^2.7.0"
+    "@mercuryworkshop/bare-server-node": "^2.0.1",
+    "express": "^4.19.2"
   }
 }
