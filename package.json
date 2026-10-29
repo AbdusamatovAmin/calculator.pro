@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "build": "mkdir -p public && curl -s https://jsdelivr.net -o public/uv.bundle.js && curl -s https://jsdelivr.net -o public/uv.sw.js"
+    "build": "mkdir -p public && curl -sSL https://jsdelivr.net -o public/uv.bundle.js && curl -sSL https://jsdelivr.net -o public/uv.sw.js"
   },
   "dependencies": {
     "express": "^4.19.2"
