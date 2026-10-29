@@ -1,50 +1,36 @@
 const express = require('express');
+const http = require('http');
 const path = require('path');
-const Unblocker = require('unblocker');
+const { UltravioletServer } = require('@titaniumnetwork-dev/ultraviolet');
 
 const app = express();
+const server = http.createServer(app);
 const PORT = process.env.PORT || 3000;
 
-// Инициализируем мощный движок проксирования
-const unblocker = new Unblocker({
-    prefix: '/proxy/'
+// Инициализация полноценного и изолированного ядра Ultraviolet
+const uvServer = new UltravioletServer({
+    prefix: '/proxy/',
+    config: path.join(__dirname, 'public'),
+    encodeUrl: (url) => encodeURIComponent(url),
+    decodeUrl: (url) => decodeURIComponent(url)
 });
 
-// 1. Подключаем unblocker (он обрабатывает все запросы к сайтам, скриптам и картинкам)
-app.use(unblocker);
-
-// 2. Раздаем файлы калькулятора
+// 1. Раздача калькулятора
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 3. Перехватчик для старых ссылок /service (чтобы не было ошибки Cannot GET)
-app.get('/service', (req, res) => {
-    const targetUrl = req.query.url;
-    if (targetUrl) {
-        // Красиво перенаправляем на новый защищенный unblocker-коридор
-        res.redirect('/proxy/' + targetUrl.replace(/^https?:\/\//i, ''));
-    } else {
-        res.redirect('/');
-    }
+// 2. Подключение прокси-обработчиков к веб-серверу
+uvServer.inject(server);
+
+// Маршрут для обработки фоновых страниц внутри фрейма
+app.use('/proxy/*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// 4. Главная страница калькулятора
+// Главная страница калькулятора
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// 5. Железная защита для Google Sites: если сайт внутри фрейма запрашивает свои внутренние файлы,
-// сервер не выдаст ошибку, а плавно пропустит их через прокси
-app.use('/*', (req, res, next) => {
-    if (req.headers.referer && req.headers.referer.includes('/proxy/')) {
-        const refererUrl = req.headers.referer;
-        const proxyPart = refererUrl.substring(refererUrl.indexOf('/proxy/') + 7);
-        const baseDomain = proxyPart.split('/')[0];
-        res.redirect('/proxy/' + baseDomain + req.originalUrl);
-    } else {
-        next();
-    }
-});
-
-app.listen(PORT, () => {
-    console.log(`Прокси-сервер для Google Sites запущен на порту ${PORT}`);
+server.listen(PORT, () => {
+    console.log(`Финальный прокси-сервер Ultraviolet успешно запущен на порту ${PORT}`);
 });
