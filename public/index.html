@@ -28,15 +28,12 @@
         .search-box button { padding: 14px 25px; border-radius: 30px; background: #38bdf8; color: #0f172a; font-weight: bold; }
         .search-box button:hover { background: #0ea5e9; }
 
-        /* Полноэкранный фрейм для сайтов */
-        #proxyFrame { display: none; width: 100vw; height: 100vh; border: none; position: absolute; top: 0; left: 0; background: #fff; z-index: 9999; }
-
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
     </style>
 </head>
 <body>
 
-    <!-- Калькулятор -->
+    <!-- Наш калькулятор маскировки -->
     <div class="calc-container" id="calc">
         <input type="text" class="display" id="screen" readonly value="0">
         <div class="buttons">
@@ -73,9 +70,6 @@
         </form>
     </div>
 
-    <!-- Полноэкранный фрейм -->
-    <iframe id="proxyFrame" allow="fullscreen; encrypted-media; autoplay"></iframe>
-
     <script>
         let currentInput = "0";
 
@@ -91,6 +85,7 @@
             }
         }
 
+        // Возврат в режим калькулятора после поиска
         function clearScreen() {
             currentInput = "0";
             document.getElementById("screen").value = currentInput;
@@ -118,17 +113,17 @@
                 url = 'https://' + url;
             }
             
-            // Используем мощный и стабильный шлюз Ultraviolet (с поддержкой фонового медиа-трафика)
-            const proxyGateway = "https://interstellar.com";
-            
-            // Кодируем ссылку методом Ultraviolet (Base64 + XOR маскировка)
-            const encodedUrl = btoa(url).replace(/\//g, '_').replace(/\+/g, '-');
-            const finalUrl = proxyGateway + encodedUrl;
+            // Используем сверхстабильный и быстрый поисковой прокси-шлюз
+            const proxyGateway = "https://textise.net";
+            const finalUrl = proxyGateway + encodeURIComponent(url);
 
-            const frame = document.getElementById("proxyFrame");
-            frame.src = finalUrl;
-            frame.style.display = "block";
+            // Главный трюк: открываем чистый сайт в новой вкладке, полностью обходя ограничения Google Sites!
+            window.open(finalUrl, '_blank');
+            
+            // Сбрасываем калькулятор обратно в режим маскировки для безопасности
             document.getElementById("proxyPanel").style.display = "none";
+            document.getElementById("calc").style.display = "block";
+            clearScreen();
         }
     </script>
 </body>
