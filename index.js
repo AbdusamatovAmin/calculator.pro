@@ -1,7 +1,7 @@
 const express = require('express');
 const { createServer } = require('node:http');
 const { createBareServer } = require('@tomphttp/bare-server-node');
-const { ultraviolet } = require('@titaniumnetwork-dev/ultraviolet');
+const { Ultraviolet } = require('@titaniumnetwork-dev/ultraviolet');
 const path = require('path');
 
 const app = express();
@@ -9,14 +9,23 @@ const server = createServer(app);
 const bare = createBareServer('/bare/');
 const PORT = process.env.PORT || 3000;
 
-// Подключаем официальный обработчик Ultraviolet на бэкенд
-app.use('/uv/', ultraviolet({
+// Инициализируем класс Ultraviolet
+const uv = new Ultraviolet({
     prefix: '/uv/service/',
     bare: '/bare/',
     config: {
         codec: 'xor'
     }
-}));
+});
+
+// Подключаем встроенные роуты Ultraviolet для раздачи конфигураций фронтенду
+app.use('/uv/', (req, res, next) => {
+    if (uv.requiresRoute(req)) {
+        uv.route(req, res);
+    } else {
+        next();
+    }
+});
 
 // Раздача файлов калькулятора
 app.use(express.static(path.join(__dirname, 'public')));
