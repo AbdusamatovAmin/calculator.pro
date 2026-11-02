@@ -17,7 +17,7 @@ const uvConfig = {
     }
 };
 
-// Защищенный способ инициализации middleware вне зависимости от внутренней структуры пакета
+// 1. СНАЧАЛА инициализируем и обрабатываем запросы прокси-движка Ultraviolet
 if (typeof uvSystem === 'function') {
     app.use('/uv/', uvSystem(uvConfig));
 } else if (uvSystem.ultraviolet && typeof uvSystem.ultraviolet === 'function') {
@@ -38,14 +38,14 @@ if (typeof uvSystem === 'function') {
     }
 }
 
-// Раздача файлов калькулятора
-app.use(express.static(path.join(__dirname, 'public')));
-
+// 2. ТОЛЬКО ПОСЛЕ ЭТОГО отдаем калькулятор и его статические файлы
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Связываем Express и Bare-сервер вместе
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Связываем Express и Bare-сервер воедино
 server.on('request', (req, res) => {
     if (bare.shouldRoute(req)) {
         bare.route(req, res);
