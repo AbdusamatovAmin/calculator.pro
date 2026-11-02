@@ -9,27 +9,27 @@ const server = createServer(app);
 const bare = createBareServer('/bare/');
 const PORT = process.env.PORT || 3000;
 
-// 1. Раздаем статические файлы Ultraviolet (конфиги, бандл, воркер)
-// Это автоматически сделает доступными файлы /uv/uv.config.js, /uv/uv.bundle.js и т.д.
+// 1. Интегрируем Bare-сервер напрямую в Express как Middleware
+app.use((req, res, next) => {
+    if (bare.shouldRoute(req)) {
+        bare.route(req, res);
+    } else {
+        next();
+    }
+});
+
+// 2. Раздаем статические файлы Ultraviolet
 app.use('/uv', express.static(uvPath));
 
-// 2. Автоматическая раздача твоей папки public (где лежит калькулятор index.html)
+// 3. Раздаем файлы твоего калькулятора из папки public
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 3. Обработка ошибок для несуществующих страниц (404)
+// 4. Запасной роут для корректной работы путей (Single Page App fallback)
 app.use((req, res) => {
     res.status(404).sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// 4. Связываем Express-сервер и Bare-сервер воедино
-server.on('request', (req, res) => {
-    if (bare.shouldRoute(req)) {
-        bare.route(req, res);
-    } else {
-        app(req, res);
-    }
-});
-
+// 5. Обрабатываем только WebSocket-апгрейды для Bare через нативный сервер
 server.on('upgrade', (req, socket, head) => {
     if (bare.shouldRoute(req)) {
         bare.routeUpgrade(req, socket, head);
@@ -38,6 +38,7 @@ server.on('upgrade', (req, socket, head) => {
     }
 });
 
+// 6. Запускаем сервер
 server.listen(PORT, () => {
     console.log(`Официальный Ultraviolet прокси успешно запущен на порту ${PORT}`);
 });
