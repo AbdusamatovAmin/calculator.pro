@@ -17,17 +17,16 @@
         button.clear { background: #ef4444; }
         button.clear:hover { background: #dc2626; }
         
-        .proxy-container { display: none; width: 100%; height: 100vh; background: #0f172a; animation: fadeIn 0.5s ease; position: absolute; top:0; left:0; z-index: 9999; }
+        .proxy-container { display: none; width: 100%; height: 100vh; background: #0f172a; position: absolute; top:0; left:0; z-index: 9999; }
         .proxy-bar { background: #1e293b; padding: 10px 20px; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid #334155; }
         .proxy-bar input { flex: 1; padding: 10px 20px; border-radius: 20px; border: 1px solid #334155; background: #0f172a; color: #fff; outline: none; }
         .proxy-bar button { padding: 10px 20px; border-radius: 20px; background: #38bdf8; color: #0f172a; font-weight: bold; border:none; cursor: pointer; }
         .proxy-bar button:hover { background: #0ea5e9; }
         iframe { width: 100%; height: calc(100vh - 60px); border: none; background: #fff; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
-    
-    <script src="/uv.config.js" defer></script>
-    <script src="/uv.bundle.js" defer></script>
+    <!-- Подключаем официальные скрипты Ultraviolet, которые теперь генерирует наш бэкенд -->
+    <script src="/uv/uv.config.js" defer></script>
+    <script src="/uv/uv.bundle.js" defer></script>
 </head>
 <body>
 
@@ -49,7 +48,7 @@
             <button onclick="press('6')">6</button>
             
             <button onclick="press('1')">1</button>
-            <button onclick="press('2')">20</button> <!-- Код 2208 сработает при нажатии 2 -> 20 -> 8 -->
+            <button onclick="press('2')">20</button>
             <button onclick="press('3')">3</button>
             <button onclick="calculate()" class="operator" style="grid-row: span 2; height: 100%; background: #22c55e;">=</button>
             
@@ -60,7 +59,7 @@
 
     <div class="proxy-container" id="proxyPanel">
         <div class="proxy-bar">
-            <input type="text" id="urlInput" placeholder="Введи адрес сайта (wikipedia.org) или поисковый запрос">
+            <input type="text" id="urlInput" placeholder="Введи адрес сайта или поисковый запрос">
             <button onclick="redirectToProxy()">Перейти</button>
         </div>
         <iframe id="proxyFrame"></iframe>
@@ -73,7 +72,6 @@
             if (currentInput === "0" && num !== ".") currentInput = "";
             currentInput += num;
             document.getElementById("screen").value = currentInput;
-
             if (currentInput === "2208") activateSecretMode();
         }
 
@@ -95,33 +93,27 @@
             document.getElementById("calc").style.display = "none";
             document.getElementById("proxyPanel").style.display = "block";
             
+            // Регистрация официального Service Worker
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/uv.sw.js', {
+                navigator.serviceWorker.register('/uv/uv.sw.js', {
                     scope: '/uv/service/'
-                }).then(() => console.log('SW активен'))
-                  .catch(err => console.error('Ошибка SW:', err));
+                });
             }
-        }
-
-        function encodeUrl(url) {
-            if (!url) return url;
-            return encodeURIComponent(url.split('').map((char, ind) => ind % 2 ? String.fromCharCode(char.charCodeAt(0) ^ 2) : char).join(''));
         }
 
         function redirectToProxy() {
             let input = document.getElementById("urlInput").value.trim();
             let url;
 
-            // Умный поиск: если это не прямая ссылка на сайт, перенаправляем на DuckDuckGo (он не выдает капчу на Render)
             if (!input.includes('.') || input.includes(' ')) {
-                url = 'https://duckduckgo.com' + encodeURIComponent(input);
+                url = 'https://google.com' + encodeURIComponent(input);
             } else {
                 url = /^https?:\/\//i.test(input) ? input : 'https://' + input;
             }
             
-            // Направляем закодированный URL прямо в iframe через наш рабочий прокси-путь
-            const targetProxyUrl = '/uv/service/' + encodeUrl(url);
-            document.getElementById("proxyFrame").src = targetProxyUrl;
+            if (window.__uv$config) {
+                document.getElementById("proxyFrame").src = window.__uv$config.prefix + window.__uv$config.encodeUrl(url);
+            }
         }
     </script>
 </body>
