@@ -19,7 +19,7 @@
         button.clear { background: #ef4444; }
         button.clear:hover { background: #dc2626; }
         
-        /* Стили прокси-панели (строго скрыта по умолчанию через display: none) */
+        /* Стили прокси-панели */
         .proxy-container { display: none; width: 100%; height: 100vh; background: #0f172a; position: absolute; top: 0; left: 0; z-index: 9999; }
         .proxy-bar { background: #1e293b; padding: 10px 20px; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid #334155; height: 60px; }
         .proxy-bar input { flex: 1; padding: 10px 20px; border-radius: 20px; border: 1px solid #334155; background: #0f172a; color: #fff; outline: none; }
@@ -27,13 +27,12 @@
         .proxy-bar button:hover { background: #0ea5e9; }
         iframe { width: 100%; height: calc(100vh - 60px); border: none; background: #fff; }
     </style>
-    <!-- Подключаем официальные скрипты Ultraviolet бэкенда -->
+    <!-- Подключаем только базовый бандл Ultraviolet -->
     <script src="/uv/uv.bundle.js" defer></script>
-    <script src="/uv/uv.config.js" defer></script>
 </head>
 <body>
 
-    <!-- Контейнер обычного калькулятора -->
+    <!-- Контейнер калькулятора -->
     <div class="calc-container" id="calc">
         <input type="text" class="display" id="screen" readonly value="0">
         <div class="buttons">
@@ -61,7 +60,7 @@
         </div>
     </div>
 
-    <!-- Изолированный секретный прокси-интерфейс -->
+    <!-- Интерфейс прокси -->
     <div class="proxy-container" id="proxyPanel">
         <div class="proxy-bar">
             <input type="text" id="urlInput" placeholder="Введи адрес сайта или поисковый запрос" onkeydown="if(event.key === 'Enter') redirectToProxy(event)">
@@ -73,12 +72,38 @@
     <script>
         let currentInput = "0";
 
+        // Локальный XOR кодировщик, полностью совместимый с Ultraviolet v3
+        const xorCodec = {
+            encode(str) {
+                if (!str) return str;
+                return encodeURIComponent(
+                    str.split('').map((char, i) => i % 2 ? String.fromCharCode(char.charCodeAt(0) ^ 2) : char).join('')
+                );
+            },
+            decode(str) {
+                if (!str) return str;
+                let [input, search] = str.split('?');
+                return decodeURIComponent(input).split('').map((char, i) => i % 2 ? String.fromCharCode(char.charCodeAt(0) ^ 2) : char).join('') + (search ? '?' + search : '');
+            }
+        };
+
+        // Задаем конфигурацию Ultraviolet прямо в глобальной видимости фронтенда
+        window.__uv$config = {
+            prefix: '/uv/service/',
+            bare: '/bare/',
+            handler: '/uv/uv.handler.js',
+            bundle: '/uv/uv.bundle.js',
+            config: '/uv/uv.config.js',
+            sw: '/uv/uv.sw.js',
+            encodeUrl: xorCodec.encode,
+            decodeUrl: xorCodec.decode
+        };
+
         function press(num) {
             if (currentInput === "0" && num !== ".") currentInput = "";
             currentInput += num;
             document.getElementById("screen").value = currentInput;
             
-            // Проверка секретного кода
             if (currentInput === "2208") {
                 activateSecretMode();
             }
@@ -102,10 +127,13 @@
             document.getElementById("calc").style.display = "none";
             document.getElementById("proxyPanel").style.display = "block";
             
-            // Регистрация Service Worker
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('/uv/uv.sw.js', {
-                    scope: '/uv/service/'
+                    scope: window.__uv$config.prefix
+                }).then(() => {
+                    console.log("Service Worker успешно зарегистрирован");
+                }).catch((err) => {
+                    console.error("Ошибка SW:", err);
                 });
             }
         }
@@ -127,11 +155,9 @@
                 url = 'https://duckduckgo.com' + encodeURIComponent(input);
             }
             
-            if (window.__uv$config) {
-                document.getElementById("proxyFrame").src = window.__uv$config.prefix + window.__uv$config.encodeUrl(url);
-            } else {
-                alert("Ошибка: Конфигурация Ultraviolet не найдена бэкендом. Попробуй перезагрузить страницу.");
-            }
+            // Направляем iframe на прокси-маршрут
+            const targetSrc = window.__uv$config.prefix + window.__uv$config.encodeUrl(url);
+            document.getElementById("proxyFrame").src = targetSrc;
         }
     </script>
 </body>
