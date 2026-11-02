@@ -1,13 +1,14 @@
 {
-  "name": "ultraviolet-calc-proxy",
-  "version": "1.0.0",
-  "description": "Full access web proxy hidden behind a calculator",
+  "name": "ultraviolet-node",
+  "version": "3.0.0",
+  "description": "Official Ultraviolet proxy behind a calculator cloak",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "express": "^4.19.2",
-    "node-fetch": "^2.7.0"
+    "@tomphttp/bare-server-node": "^2.0.1",
+    "@titaniumnetwork-dev/ultraviolet": "^3.2.4",
+    "express": "^4.19.2"
   }
 }
