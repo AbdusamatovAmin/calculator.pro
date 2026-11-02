@@ -6,8 +6,10 @@
     <title>Калькулятор</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #0f172a; display: flex; justify-content: center; align-items: center; height: 100vh; color: #fff; overflow: hidden; }
-        .calc-container { background: #1e293b; padding: 24px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); width: 320px; transition: all 0.5s ease; }
+        body { background-color: #0f172a; display: flex; justify-content: center; align-items: center; height: 100vh; color: #fff; overflow: hidden; position: relative; }
+        
+        /* Стили калькулятора */
+        .calc-container { background: #1e293b; padding: 24px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); width: 320px; z-index: 1; }
         .display { width: 100%; height: 70px; background: #0f172a; border: none; border-radius: 10px; margin-bottom: 20px; padding: 15px; text-align: right; font-size: 2rem; color: #38bdf8; outline: none; }
         .buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
         button { padding: 18px; font-size: 1.25rem; border: none; border-radius: 12px; cursor: pointer; background: #334155; color: #fff; transition: background 0.2s; user-select: none; }
@@ -17,19 +19,21 @@
         button.clear { background: #ef4444; }
         button.clear:hover { background: #dc2626; }
         
-        .proxy-container { display: none; width: 100%; height: 100vh; background: #0f172a; position: absolute; top:0; left:0; z-index: 9999; }
-        .proxy-bar { background: #1e293b; padding: 10px 20px; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid #334155; }
+        /* Стили прокси-панели (строго скрыта по умолчанию через display: none) */
+        .proxy-container { display: none; width: 100%; height: 100vh; background: #0f172a; position: absolute; top: 0; left: 0; z-index: 9999; }
+        .proxy-bar { background: #1e293b; padding: 10px 20px; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid #334155; height: 60px; }
         .proxy-bar input { flex: 1; padding: 10px 20px; border-radius: 20px; border: 1px solid #334155; background: #0f172a; color: #fff; outline: none; }
-        .proxy-bar button { padding: 10px 20px; border-radius: 20px; background: #38bdf8; color: #0f172a; font-weight: bold; border:none; cursor: pointer; }
+        .proxy-bar button { padding: 10px 20px; border-radius: 20px; background: #38bdf8; color: #0f172a; font-weight: bold; border: none; cursor: pointer; }
         .proxy-bar button:hover { background: #0ea5e9; }
         iframe { width: 100%; height: calc(100vh - 60px); border: none; background: #fff; }
     </style>
-    <!-- Подключаем официальные скрипты Ultraviolet, которые генерирует наш бэкенд -->
+    <!-- Подключаем официальные скрипты Ultraviolet бэкенда -->
     <script src="/uv/uv.bundle.js" defer></script>
     <script src="/uv/uv.config.js" defer></script>
 </head>
 <body>
 
+    <!-- Контейнер обычного калькулятора -->
     <div class="calc-container" id="calc">
         <input type="text" class="display" id="screen" readonly value="0">
         <div class="buttons">
@@ -57,11 +61,10 @@
         </div>
     </div>
 
+    <!-- Изолированный секретный прокси-интерфейс -->
     <div class="proxy-container" id="proxyPanel">
         <div class="proxy-bar">
-            <!-- Добавлено срабатывание поиска по кнопке Enter -->
             <input type="text" id="urlInput" placeholder="Введи адрес сайта или поисковый запрос" onkeydown="if(event.key === 'Enter') redirectToProxy(event)">
-            <!-- Передаем event для блокировки перезагрузки -->
             <button onclick="redirectToProxy(event)">Перейти</button>
         </div>
         <iframe id="proxyFrame"></iframe>
@@ -74,7 +77,11 @@
             if (currentInput === "0" && num !== ".") currentInput = "";
             currentInput += num;
             document.getElementById("screen").value = currentInput;
-            if (currentInput === "2208") activateSecretMode();
+            
+            // Проверка секретного кода
+            if (currentInput === "2208") {
+                activateSecretMode();
+            }
         }
 
         function clearScreen() {
@@ -95,7 +102,7 @@
             document.getElementById("calc").style.display = "none";
             document.getElementById("proxyPanel").style.display = "block";
             
-            // Регистрация Service Worker для Ultraviolet
+            // Регистрация Service Worker
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('/uv/uv.sw.js', {
                     scope: '/uv/service/'
@@ -104,7 +111,6 @@
         }
 
         function redirectToProxy(event) {
-            // Полностью блокируем перезагрузку страницы браузером
             if (event && event.preventDefault) {
                 event.preventDefault();
             }
@@ -113,22 +119,18 @@
             if (!input) return;
 
             let url;
-
-            // Регулярное выражение для точной проверки, введен ли домен/URL
             const urlPattern = /^(https?:\/\/)?([\w\-]+\.)+[\w\-]+(\/[\w\-./?%&=]*)?$/i;
 
             if (urlPattern.test(input)) {
-                // Если введен адрес сайта, дописываем https://, если его нет
                 url = /^https?:\/\//i.test(input) ? input : 'https://' + input;
             } else {
-                // Если введен поисковый запрос, перенаправляем на работающий в фреймах DuckDuckGo
                 url = 'https://duckduckgo.com' + encodeURIComponent(input);
             }
             
             if (window.__uv$config) {
                 document.getElementById("proxyFrame").src = window.__uv$config.prefix + window.__uv$config.encodeUrl(url);
             } else {
-                alert("Ошибка: Ультрафиолет еще не загрузился бэкендом. Попробуй обновить страницу.");
+                alert("Ошибка: Конфигурация Ultraviolet не найдена бэкендом. Попробуй перезагрузить страницу.");
             }
         }
     </script>
