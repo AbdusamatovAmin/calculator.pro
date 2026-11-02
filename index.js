@@ -17,32 +17,34 @@ const uvConfig = {
     }
 };
 
-// 1. СНАЧАЛА инициализируем и обрабатываем запросы прокси-движка Ultraviolet
-if (typeof uvSystem === 'function') {
-    app.use('/uv/', uvSystem(uvConfig));
-} else if (uvSystem.ultraviolet && typeof uvSystem.ultraviolet === 'function') {
-    app.use('/uv/', uvSystem.ultraviolet(uvConfig));
-} else {
-    const UltravioletClass = uvSystem.Ultraviolet || uvSystem;
-    try {
-        const uv = new UltravioletClass(uvConfig);
-        app.use('/uv/', (req, res, next) => {
-            if (uv.requiresRoute(req)) {
-                uv.route(req, res);
-            } else {
-                next();
-            }
-        });
-    } catch (e) {
-        app.use('/uv/', uvSystem.server ? uvSystem.server(uvConfig) : (req, res, next) => next());
+// Инициализируем ядро Ultraviolet напрямую вне конвейера Express middleware
+const UltravioletClass = uvSystem.Ultraviolet || uvSystem;
+let uv = null;
+try {
+    if (typeof uvSystem !== 'function' && UltravioletClass && typeof UltravioletClass === 'function') {
+        uv = new UltravioletClass(uvConfig);
     }
+} catch (e) {
+    console.log("Инициализация через класс не требуется");
 }
 
-// 2. ТОЛЬКО ПОСЛЕ ЭТОГО отдаем калькулятор и его статические файлы
+// Умный бесконфликтный перехватчик: отдаем запрос Ultraviolet ТОЛЬКО если он служебный
+app.use((req, res, next) => {
+    if (uv && uv.requiresRoute(req)) {
+        return uv.route(req, res);
+    }
+    if (typeof uvSystem === 'function' && (req.url.startsWith('/uv/ service/') || req.url.startsWith('/uv/'))) {
+        return uvSystem(uvConfig)(req, res, next);
+    }
+    next();
+});
+
+// Главная страница калькулятора
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Раздача остальных статических элементов (строго после проверки прокси)
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Связываем Express и Bare-сервер воедино
