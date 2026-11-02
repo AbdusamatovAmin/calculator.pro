@@ -24,7 +24,7 @@
         .proxy-bar button:hover { background: #0ea5e9; }
         iframe { width: 100%; height: calc(100vh - 60px); border: none; background: #fff; }
     </style>
-    <!-- Подключаем официальные скрипты Ultraviolet, которые теперь генерирует наш бэкенд -->
+    <!-- Подключаем официальные скрипты Ultraviolet, которые генерирует наш бэкенд -->
     <script src="/uv/uv.config.js" defer></script>
     <script src="/uv/uv.bundle.js" defer></script>
 </head>
@@ -93,7 +93,7 @@
             document.getElementById("calc").style.display = "none";
             document.getElementById("proxyPanel").style.display = "block";
             
-            // Регистрация официального Service Worker
+            // Регистрация Service Worker для Ultraviolet
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('/uv/uv.sw.js', {
                     scope: '/uv/service/'
@@ -105,14 +105,21 @@
             let input = document.getElementById("urlInput").value.trim();
             let url;
 
-            if (!input.includes('.') || input.includes(' ')) {
-                url = 'https://google.com' + encodeURIComponent(input);
-            } else {
+            // Регулярное выражение для точной проверки, введен ли домен/URL
+            const urlPattern = /^(https?:\/\/)?([\w\-]+\.)+[\w\-]+(\/[\w\-./?%&=]*)?$/i;
+
+            if (urlPattern.test(input)) {
+                // Если введен адрес сайта, дописываем https://, если его нет
                 url = /^https?:\/\//i.test(input) ? input : 'https://' + input;
+            } else {
+                // Если введен поисковый запрос, перенаправляем на работающий в фреймах DuckDuckGo
+                url = 'https://duckduckgo.com' + encodeURIComponent(input);
             }
             
             if (window.__uv$config) {
                 document.getElementById("proxyFrame").src = window.__uv$config.prefix + window.__uv$config.encodeUrl(url);
+            } else {
+                alert("Ошибка: Ультрафиолет еще не загрузился бэкендом. Попробуй обновить страницу.");
             }
         }
     </script>
