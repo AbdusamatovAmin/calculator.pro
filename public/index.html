@@ -27,7 +27,7 @@
         .proxy-bar button:hover { background: #0ea5e9; }
         iframe { width: 100%; height: calc(100vh - 60px); border: none; background: #fff; }
     </style>
-    <!-- Подключаем только базовый бандл Ultraviolet -->
+    <!-- Подключаем официальный бандл Ultraviolet бэкенда -->
     <script src="/uv/uv.bundle.js" defer></script>
 </head>
 <body>
@@ -60,7 +60,7 @@
         </div>
     </div>
 
-    <!-- Интерфейс прокси -->
+    <!-- Секретный прокси-интерфейс -->
     <div class="proxy-container" id="proxyPanel">
         <div class="proxy-bar">
             <input type="text" id="urlInput" placeholder="Введи адрес сайта или поисковый запрос" onkeydown="if(event.key === 'Enter') redirectToProxy(event)">
@@ -72,7 +72,7 @@
     <script>
         let currentInput = "0";
 
-        // Локальный XOR кодировщик, полностью совместимый с Ultraviolet v3
+        // Синхронизированный XOR алгоритм для Ultraviolet v3
         const xorCodec = {
             encode(str) {
                 if (!str) return str;
@@ -87,7 +87,7 @@
             }
         };
 
-        // Задаем конфигурацию Ultraviolet прямо в глобальной видимости фронтенда
+        // Задаем глобальные свойства Ultraviolet фронтенда
         window.__uv$config = {
             prefix: '/uv/service/',
             bare: '/bare/',
@@ -130,15 +130,13 @@
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('/uv/uv.sw.js', {
                     scope: window.__uv$config.prefix
-                }).then(() => {
-                    console.log("Service Worker успешно зарегистрирован");
                 }).catch((err) => {
-                    console.error("Ошибка SW:", err);
+                    console.error("Ошибка активации SW:", err);
                 });
             }
         }
 
-        function redirectToProxy(event) {
+        async function redirectToProxy(event) {
             if (event && event.preventDefault) {
                 event.preventDefault();
             }
@@ -154,8 +152,15 @@
             } else {
                 url = 'https://duckduckgo.com' + encodeURIComponent(input);
             }
+
+            // Гарантируем регистрацию Service Worker перед отправкой фрейма
+            if ('serviceWorker' in navigator) {
+                const registration = await navigator.serviceWorker.ready;
+                if (!registration.active) {
+                    await navigator.serviceWorker.register('/uv/uv.sw.js', { scope: window.__uv$config.prefix });
+                }
+            }
             
-            // Направляем iframe на прокси-маршрут
             const targetSrc = window.__uv$config.prefix + window.__uv$config.encodeUrl(url);
             document.getElementById("proxyFrame").src = targetSrc;
         }
