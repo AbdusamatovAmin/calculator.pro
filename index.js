@@ -1,7 +1,7 @@
 const express = require('express');
 const { createServer } = require('node:http');
 const { createBareServer } = require('@tomphttp/bare-server-node');
-const uvSystem = require('@titaniumnetwork-dev/ultraviolet');
+const { uvPath } = require('@titaniumnetwork-dev/ultraviolet');
 const path = require('path');
 
 const app = express();
@@ -9,38 +9,17 @@ const server = createServer(app);
 const bare = createBareServer('/bare/');
 const PORT = process.env.PORT || 3000;
 
-const uvConfig = {
-    prefix: '/uv/service/',
-    bare: '/bare/',
-    config: {
-        codec: 'xor'
-    }
-};
+// 1. Раздаем статические файлы Ultraviolet (конфиги, бандл, воркер)
+// Это автоматически сделает доступными файлы /uv/uv.config.js, /uv/uv.bundle.js и т.д.
+app.use('/uv', express.static(uvPath));
 
-// 1. Инициализируем ядро Ultraviolet
-const UltravioletClass = uvSystem.Ultraviolet || uvSystem;
-let uv = null;
-try {
-    if (typeof uvSystem !== 'function' && UltravioletClass && typeof UltravioletClass === 'function') {
-        uv = new UltravioletClass(uvConfig);
-    }
-} catch (e) {
-    console.log("Инициализация через конструктор не требуется");
-}
-
-// 2. Изолированный перехватчик: отдаем роут Ultraviolet, только если он служебный
-app.use((req, res, next) => {
-    if (uv && uv.requiresRoute(req)) {
-        return uv.route(req, res);
-    }
-    if (typeof uvSystem === 'function' && (req.url.startsWith('/uv/service/') || req.url.startsWith('/uv/'))) {
-        return uvSystem(uvConfig)(req, res, next);
-    }
-    next();
-});
-
-// 3. Автоматическая и безопасная раздача папки public (Express сам найдет там index.html)
+// 2. Автоматическая раздача твоей папки public (где лежит калькулятор index.html)
 app.use(express.static(path.join(__dirname, 'public')));
+
+// 3. Обработка ошибок для несуществующих страниц (404)
+app.use((req, res) => {
+    res.status(404).sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 // 4. Связываем Express-сервер и Bare-сервер воедино
 server.on('request', (req, res) => {
