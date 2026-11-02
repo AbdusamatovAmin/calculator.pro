@@ -17,7 +17,7 @@ const uvConfig = {
     }
 };
 
-// Инициализируем ядро Ultraviolet напрямую вне конвейера Express middleware
+// 1. Инициализируем ядро Ultraviolet
 const UltravioletClass = uvSystem.Ultraviolet || uvSystem;
 let uv = null;
 try {
@@ -25,29 +25,24 @@ try {
         uv = new UltravioletClass(uvConfig);
     }
 } catch (e) {
-    console.log("Инициализация через класс не требуется");
+    console.log("Инициализация через конструктор не требуется");
 }
 
-// Умный бесконфликтный перехватчик: отдаем запрос Ultraviolet ТОЛЬКО если он служебный
+// 2. Изолированный перехватчик: отдаем роут Ultraviolet, только если он служебный
 app.use((req, res, next) => {
     if (uv && uv.requiresRoute(req)) {
         return uv.route(req, res);
     }
-    if (typeof uvSystem === 'function' && (req.url.startsWith('/uv/ service/') || req.url.startsWith('/uv/'))) {
+    if (typeof uvSystem === 'function' && (req.url.startsWith('/uv/service/') || req.url.startsWith('/uv/'))) {
         return uvSystem(uvConfig)(req, res, next);
     }
     next();
 });
 
-// Главная страница калькулятора
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// Раздача остальных статических элементов (строго после проверки прокси)
+// 3. Автоматическая и безопасная раздача папки public (Express сам найдет там index.html)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Связываем Express и Bare-сервер воедино
+// 4. Связываем Express-сервер и Bare-сервер воедино
 server.on('request', (req, res) => {
     if (bare.shouldRoute(req)) {
         bare.route(req, res);
