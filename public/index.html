@@ -59,8 +59,10 @@
 
     <div class="proxy-container" id="proxyPanel">
         <div class="proxy-bar">
-            <input type="text" id="urlInput" placeholder="Введи адрес сайта или поисковый запрос">
-            <button onclick="redirectToProxy()">Перейти</button>
+            <!-- Добавлено срабатывание поиска по кнопке Enter -->
+            <input type="text" id="urlInput" placeholder="Введи адрес сайта или поисковый запрос" onkeydown="if(event.key === 'Enter') redirectToProxy(event)">
+            <!-- Передаем event для блокировки перезагрузки -->
+            <button onclick="redirectToProxy(event)">Перейти</button>
         </div>
         <iframe id="proxyFrame"></iframe>
     </div>
@@ -101,8 +103,15 @@
             }
         }
 
-        function redirectToProxy() {
+        function redirectToProxy(event) {
+            // Полностью блокируем перезагрузку страницы браузером
+            if (event && event.preventDefault) {
+                event.preventDefault();
+            }
+
             let input = document.getElementById("urlInput").value.trim();
+            if (!input) return;
+
             let url;
 
             // Регулярное выражение для точной проверки, введен ли домен/URL
